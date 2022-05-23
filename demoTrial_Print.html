@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <title>finalPrint - Quick Start - Leaflet</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.js"></script>
+    <script src="./lib/leaflet.browser.print.min.js"></script>
+    <!--<script src="https://code.jquery.com/jquery-2.2.4.js" integrity="sha256-iT6Q9iMJYuQiMWNd9lDyBUStIq/8PuOW33aOqmvFpqI=" crossorigin="anonymous"></script>-->
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+        
+        .leaflet-container {
+            height: 100%;
+            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            position: relative;
+        }
+        
+        #box {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            border-color: green;
+            top: 50px;
+            left: 0;
+            opacity: 0.8;
+            /* for demo purpose  */
+        }
+       
+
+        
+        .leaflet-popup-content {
+            max-height: 500px;
+            overflow: auto;
+        }
+       
+
+        
+        .leaflet-control {
+            cursor: auto;
+            background-color: white;
+            max-height: 100%;
+            width: auto; 
+            max-width: 100%;
+            overflow: auto;
+            border-radius: 25px;
+            padding-top: 10px;
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-bottom: 10px;
+        }
+       
+    </style>
+</head>
+
+<body>
+    
+    
+    <div id="map"></div>
+
+    <script>
+         var center = [37.792931, -122.413605];
+        var center1 = [37.792405, -122.414308];
+        var center2 = [37.793198, -122.414442];
+        var center3 = [37.793427, -122.41286];
+        var center4 = [37.792583, -122.412699];
+        // var map = L.map('map').setView(center, 19);
+        // L.tileLayer(
+        //     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        //     maxZoom: 25
+        // }).addTo(map);
+
+        
+        //BaseMap Layer toggle:-------trial 1 ----------
+        var white = L.tileLayer(
+                                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 25
+                            });
+        var Satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                                maxZoom: 25,attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                            });	
+        
+        var map = L.map('map',{
+                            center: center, //[37.793427, -122.41286], //center, //[18.520,73.856],
+                            zoom:18,
+                            layers: [white,Satellite]
+                            });
+        //map.setView(center,18);
+
+        //setting a marker for demo --- plus also for getting the icon to work as toggle for baseMap change:--------
+        var citycenter = L.marker([37.793505140606094, -122.41279560814331]);
+        citycenter.bindPopup("without this overlay icon not showing!!");
+        
+        var BaseMaps = {
+            "Street Map": white,            
+            "Satellite View": Satellite
+                        };
+        var overlayMaps = {
+            "Demo_Cities": citycenter
+        };
+        L.control.layers(BaseMaps,overlayMaps,{position:'topleft'}).addTo(map); //(BaseMaps,overlayMaps,{position:'topleft'}).addTo(map); 
+
+        //Source Polygon.
+        var latlngs = [
+            [ // first polygon
+                [center1, center2, center3, center4]
+            ],
+            [ // second polygon
+                [[37.793353, -122.414689], [37.793319, -122.414976], [37.79391, -122.415102], [37.793946, -122.414818]]
+            ],
+            [ // second polygon
+                [[37.793311, -122.41437], [37.793465, -122.414405], [37.793522, -122.41397], [37.793491, -122.413957], [37.793486, -122.413976], [37.7934, -122.413951]
+                    , [37.793402, -122.413941], [37.793368, -122.413933]]
+            ],
+            [
+                [[37.792825, -122.414517], [37.792545, -122.414474], [37.792511, -122.414807], [37.792613, -122.414823], [37.792596, -122.414936], [37.792778, -122.414952]]
+            ],
+            [
+                [[37.792329, -122.41632], [37.792528, -122.416357], [37.792562, -122.416154], [37.792359, -122.416116], [37.79235, -122.416121]]
+            ],
+            [
+                [[37.793516, -122.412731], [37.79369, -122.412763], [37.793732, -122.412474], [37.793542, -122.412436]]
+            ]
+        ];
+
+        var polygon, i,polyJson;
+        var selPolyGeo;
+        var geomColl = [];
+        for (i = 0; i < latlngs.length; i++) {
+            polygon = L.polygon(latlngs[i], { color: 'green' }).addTo(map);
+            //Source Polygon OnClick.
+            polygon.on("click", function () {
+                geomColl = [];
+                if (otherLayer != null)
+                    map.removeLayer(otherLayer)
+                if (remPolyColl != null) {
+                    for (let i = 0; i < remPolyColl.length; i++) {
+                        map.removeLayer(remPolyColl[i]);
+                    }
+                }
+                map.fitBounds(this.getBounds());
+
+                var latLongColl = this.getLatLngs();
+
+                //Getting json from polygon.
+                polyJson = null;
+                polyJson = this.toGeoJSON();
+
+                //Step2: Polygon to Line.
+                var line = turf.polygonToLine(polyJson);
+
+                //Step3: Getting geometry from line.
+                selPolyGeo = turf.getGeom(line);
+
+                var htmlText = "<p><b><label>Select the Unit Type:</label> </b> <select name='Units' id='units'>  <option value='miles'>Miles</option>   <option value='kilometers'>Kilometers</option>  <option value='inches'>Inches</option>  <option value='yards'>Yards</option>  <option value='meters'>Meters</option>  </select><br></p>";
+                htmlText = htmlText + "<b><label style='color:blue; font-size: small;'>Find the below selected polygon lines:</label></b></br>";
+
+                for (let i = 0; i < selPolyGeo.coordinates.length; i++) {
+                    if (i < selPolyGeo.coordinates.length - 1) {
+                        htmlText = htmlText + '<b>Enter Line ' + i + ' Raidus Value:' + "</b></br>";
+                        htmlText = htmlText + "<input type='text' size='23' id='txtRadius" + i + "' onclick='return TextBoxClickFun(id," + i + ")' value='0'></br>";
+                        geomColl.push(i);
+                    }
+                }
+                htmlText = htmlText + "</br><button id='btnSubmit' type='button' onclick='return Submit()'>Submit</button>" + "</br></br>";
+                var infoDiv = info._container;
+                infoDiv.innerHTML = htmlText;
+                info._div.style.visibility = 'visible';
+                console.log(latLongColl);
+            });
+        }
+
+
+        function TextBoxClickFun(e, index) {
+            var txtEle = document.getElementById(e);
+            theFunction(e, index, txtEle.value)
+            if (txtEle.value != "") {
+                var offSetPolygon = GetOffsetPolyline(e, index, txtEle.value)
+                geomColl[index] = offSetPolygon;
+            }
+            txtEle.addEventListener('change', bar);
+            function bar(e) {
+                var offSetPolygon = GetOffsetPolyline(e, index, txtEle.value)
+                geomColl[index] = offSetPolygon;
+            }
+        }
+
+        var otherLayer;
+        function theFunction(e, id, radiusValue) {
+            //alert(e.coordinates[id]);
+            var unitsType = document.getElementById('units').value;
+            var tempLine = turf.lineString([selPolyGeo.coordinates[id], selPolyGeo.coordinates[parseInt(id) + 1]]);
+            var offsetLine = turf.lineOffset(tempLine, radiusValue, { units: unitsType });
+            var tempLineGeo = turf.getGeom(tempLine);
+            var offsetLineGeo = turf.getGeom(offsetLine);
+            var tline = turf.lineString([tempLineGeo.coordinates[0], offsetLineGeo.coordinates[0], offsetLineGeo.coordinates[1], tempLineGeo.coordinates[1]]);
+            var tpolygon = turf.lineToPolygon(tline);
+            if (otherLayer != null)
+                map.removeLayer(otherLayer)
+            otherLayer = L.geoJSON(tpolygon, {
+                style: function (feature) {
+                    return {
+                        color: 'red',
+                        fillColor: 'red',
+                        fillOpacity: .15
+                    };
+                }
+            }).addTo(map);
+        }
+
+        function GetOffsetPolyline(e, id, radiusValue) {
+            //alert(e.coordinates[id]);
+            var unitsType = document.getElementById('units').value;
+            var tempLine = turf.lineString([selPolyGeo.coordinates[id], selPolyGeo.coordinates[parseInt(id) + 1]]);
+            var offsetLine = turf.lineOffset(tempLine, radiusValue, { units: unitsType });
+            var tempLineGeo = turf.getGeom(tempLine);
+            var offsetLineGeo = turf.getGeom(offsetLine);
+            var tline = turf.lineString([tempLineGeo.coordinates[0], offsetLineGeo.coordinates[0], offsetLineGeo.coordinates[1], tempLineGeo.coordinates[1]]);
+            var tpolygon = turf.lineToPolygon(tline);
+            return tpolygon;
+        }
+
+        var remPolyColl = [];
+        function Submit() {
+            if (remPolyColl != null) {
+                for (let i = 0; i < remPolyColl.length; i++) {
+                    map.removeLayer(remPolyColl[i]);
+                }
+            }
+            if (otherLayer != null)
+                map.removeLayer(otherLayer)
+
+            var union = geomColl[0];
+            for (let i = 0; i < geomColl.length; i++) {
+                if (geomColl[i].type != undefined) {
+
+                    union = turf.union(union, geomColl[i]);
+
+                }
+                
+            }
+
+            var intersection = turf.intersect(union, polyJson);
+
+            otherLayer = L.geoJSON(intersection, {
+                    style: function (feature) {
+                        return {
+                            color: 'red',
+                            weight: 0,
+                            fillColor: 'red',
+                            fillOpacity: .15
+                        };
+                    }
+                }).addTo(map);
+                remPolyColl.push(otherLayer);
+        }
+
+        // control that shows state info on hover
+        var info = L.control({ position: 'bottomleft' });
+        info.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            return this._div;
+        };
+        info.addTo(map);
+
+
+        
+        //Printing Maps ---- 2nd trial :-----
+        // var browserControl = L.control.browserPrint(options).addTo(map); 
+        L.control.browserPrint({position: 'topright', title: 'Print Map'}).addTo(map);
+
+        // //Printing Maps ---- 1st trial :---
+        // var p = document.getElementById("print_map").innerHTML
+        // //console.log(p);
+        // function printMe(){
+        //     console.log(p);
+        //     window.print();
+        // }
+
+        //leaflet browser print method :---
+        //L.control.browserPrint().addTo(map);
+
+
+        /*
+        //print maps -------- 3rd trial:----
+        var customActionToPrint = function(context, mode) {
+            return function() {
+                window.alert("We are printing the MAP. Let's do Custom print here!");
+                context._printMode(mode);
+            }
+        };
+
+        L.control.browserPrint({
+            title: 'Just print me!',
+            documentTitle: 'Map printed using leaflet.browser.print plugin',
+            printLayer: L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.{ext}', {
+                            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                            subdomains: 'abcd',
+                            minZoom: 1,
+                            maxZoom: 16,
+                            ext: 'png'
+                        }),
+            closePopupsOnPrint: false,
+            printModes: [
+                    L.BrowserPrint.Mode.Landscape("Tabloid",{title: "Tabloid VIEW"}),
+                    L.browserPrint.mode("Alert",{title:"User specified print action",pageSize: "A6", action: customActionToPrint, invalidateBounds: false}),
+                    L.BrowserPrint.Mode.Landscape(),
+                    "Portrait",
+                    L.BrowserPrint.Mode.Auto("B4",{title: "Auto"}),
+                    L.BrowserPrint.Mode.Custom("B5",{title:"Select area"})
+            ],
+            manualMode: false
+        }).addTo(map);
+        */
+/*
+        $('.print_map').click(function(){
+            console.log("linked");
+            window.print();
+        }
+        )
+        */
+    </script>
+</body>
+
+</html>
